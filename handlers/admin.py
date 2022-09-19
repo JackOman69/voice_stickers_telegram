@@ -2,8 +2,8 @@ from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
-from aiogram.types import ReplyKeyboardRemove
-from keyboard import kb_client
+from keyboard import kb_client, kb_start
+from database import sql_db
 
 ADMIN_ID = 2014604156
 
@@ -19,14 +19,14 @@ async def is_admin(message: types.Message):
 
 async def cm_start(message: types.Message):
     await FSMAdmin.photo.set()
-    await message.answer("Для начала фоточку ублюдыша:")
+    await message.answer("Для начала фоточку ублюдыша:", reply_markup=kb_client.kb_cancel)
 
 async def cancel_handler(message: types.Message, state=FSMContext):
     current_state = await state.get_state()
     if current_state is None:
         return
     await state.finish()
-    await message.answer("Хорошо")
+    await message.answer("Хорошо", reply_markup=kb_start.kb_menu)
 
 async def load_photo(message: types.Message, state=FSMContext):
     async with state.proxy() as data:
@@ -44,18 +44,19 @@ async def load_description(message: types.Message, state=FSMContext):
     async with state.proxy() as data:
         data["description"] = message.text
     await FSMAdmin.next()
-    await message.answer("Присвой редкость этому ублюдышу через клавиатурку(ДЛЯ ТУПЫХ)", reply_markup=ReplyKeyboardRemove())
+    await message.answer("Присвой редкость этому ублюдышу через клавиатурку(ДЛЯ ТУПЫХ)", reply_markup=kb_client.kb_choose)
 
 async def load_rariry(message: types.Message, state=FSMContext):
     async with state.proxy() as data:
         data["rarity"] = message.text
-    async with state.proxy() as data:
-        await message.answer(str(data))
+    await sql_db.sql_add(state)
+    await message.answer("Готово!", reply_markup=kb_start.kb_menu)
     await state.finish()
 
 def add_shiz(dp: Dispatcher):
     dp.register_message_handler(is_admin, commands=["Админ"], state=None)
     dp.register_message_handler(cm_start, commands=["Загрузить"], state=None)
+    dp.register_message_handler(cm_start, Text(equals="загрузить", ignore_case=True), state=None)
     dp.register_message_handler(cancel_handler, commands=["Отмена"],state="*")
     dp.register_message_handler(cancel_handler, Text(equals="отмена", ignore_case=True), state="*")
     dp.register_message_handler(load_photo, content_types=["photo"], state=FSMAdmin.photo)
