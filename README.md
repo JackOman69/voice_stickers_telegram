@@ -22,13 +22,13 @@
 
 ## Инструкция к установке:
 
-- git clone https://github.com/JackOman69/voice_stickers_telegram -b light-version
-- python -m venv venv
-- & <i>Путь до проекта</i>/voice_stickers_telegram/venv/Scripts/Activate.ps1
-- pip install -r requirements.txt
-- Создайте в корневой папке файл .env, куда добавьте строку <i>TOKEN="ВАШ_ТОКЕН_БОТА"</i>
-- Измените в файле handlers/start_chat.py константу ADMIN_ID на ваш ID или ID всех людей, кто будет пользоваться админкой
-- python main.py
+- `git clone https://github.com/JackOman69/voice_stickers_telegram -b light-version`
+- `python -m venv venv`
+- `& <i>Путь до проекта</i>/voice_stickers_telegram/venv/Scripts/Activate.ps1`
+- `pip install -r requirements.txt`
+- Создайте в корневой папке файл .env, куда добавьте строку `TOKEN="ВАШ_ТОКЕН_БОТА"`
+- Измените в файле `handlers/start_chat.py` константу `ADMIN_ID` на ваш ID или ID всех людей, кто будет пользоваться админкой
+- `python main.py`
 
 
 <h1 align="center">Обновления в пути!</h1>
