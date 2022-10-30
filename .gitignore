@@ -1,5 +1,5 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
+/pycache/*
 *.py[cod]
 *$py.class
 
@@ -160,5 +160,5 @@ cython_debug/
 #.idea/
 
 # SQLite3 database
-database/.db
-database/.db-journal
+*.db
+*.db-journal
