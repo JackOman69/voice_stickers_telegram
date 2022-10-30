@@ -1,45 +1,63 @@
-from aiogram import types
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
 from aiogram.dispatcher.filters import Text
-from create import dp, bot
+from create import bot, dp
 from handlers import manage_voices
 from database import sql_db
 
-def sort_keyboard(tags):
+def sort_author_keyboard(authors):
+    authors_inline = []
+    for i in authors:
+        authors_inline.append(InlineKeyboardButton(text=i, callback_data=f"sort_voices_authors {i}"))
+    return InlineKeyboardMarkup(inline_keyboard=[[i] for i in authors_inline])
+
+def sort_tags_keyboard(sorted_tags):
     tags_inline = []
-    for i in tags:
-        tags_inline.append(types.InlineKeyboardButton(text=i, callback_data=f"sort_by_tags {i}"))
-    return types.InlineKeyboardMarkup(inline_keyboard=[[i] for i in tags_inline])
+    for i in sorted_tags:
+        tags_inline.append(InlineKeyboardButton(text=i, callback_data=f"sort_voices_tags {i}"))
+    return InlineKeyboardMarkup(inline_keyboard=[[i] for i in tags_inline]).add(InlineKeyboardButton(text="Меню", callback_data=f"menu"))
 
-async def delete_messages(message):
-    if message.message_id + 1:
-        await bot.delete_message(message.from_user.id, message.message_id)
-        await bot.delete_message(message.from_user.id, message.message_id - 1)
+def sorted_list(sorting):
+    return list(set([i[j] for i in [i[0].split(", ") for i in sorting] for j in range(len(i))]))
 
-@dp.callback_query_handler(Text(startswith="sort_by_tags"))
-async def sort_tags(callback: types.CallbackQuery):
-    read = await sql_db.sql_sort_by_tags(callback.data.replace("sort_by_tags ", ""))
+@dp.callback_query_handler(Text(startswith="sort_voices_tags"))
+async def sort_tags(callback: CallbackQuery):
+    sort_tags.read_tags = await sql_db.sql_sort_by_tags(callback.data.replace("sort_voices_tags ", ""))
     await bot.delete_message(callback.from_user.id, callback.message.message_id)
-    for i in read:
-        await bot.send_voice(callback.from_user.id, i[1])
-        await bot.send_message(
-            callback.from_user.id, 
-            f"Описание голосового: {i[3]}\n", 
-            reply_markup=manage_voices.get_keyboard(i)
-        )
+    await bot.send_voice(
+        callback.from_user.id, 
+        sort_tags.read_tags[0][1], 
+        f"Описание голосового: {sort_tags.read_tags[0][3]}\n", 
+        reply_markup=manage_voices.get_keyboard(sort_tags.read_tags[0])
+    )
     await callback.answer()
 
-async def list_of_tags(message: types.Message):
-    read_tags = await sql_db.sql_read_tags()    
-    tags = list(set([i[j] for i in [i[0].split(", ") for i in read_tags] for j in range(len(i))]))
-    if not tags:
-        return await bot.send_message(message.from_user.id, "База данных пуста!")
+@dp.callback_query_handler(Text(startswith="sort_voices_authors"))
+async def list_of_tags(callback: CallbackQuery):
+    sort_tags_by_authors = await sql_db.sql_sort_by_authors(callback.data.replace("sort_voices_authors ", ""))
+    sorted_tags = sorted_list(sort_tags_by_authors)
+    await bot.edit_message_text(
+        "Выберите тег голосового, который хотите посмотреть:",
+        callback.from_user.id, 
+        callback.message.message_id, 
+    )
+    await bot.edit_message_reply_markup(
+        callback.from_user.id, 
+        callback.message.message_id,
+        reply_markup = sort_tags_keyboard(sorted_tags) 
+    )
+    await callback.answer()
+
+async def list_of_authors(message: Message):
+    read_authors = await sql_db.sql_read_author()    
+    authors = sorted_list(read_authors)
+    if not authors:    
+        await bot.send_message(message.from_user.id, "База данных пуста!")
     await bot.send_message(
         message.from_user.id, 
-        "Выберете тэг голосового, который хотите посмотреть:", 
-        reply_markup = sort_keyboard(tags)
+        "Выберите автора голосового, чьи теги вы хотите посмотреть:", 
+        reply_markup = sort_author_keyboard(authors)
     )
-    # await delete_messages(message)
 
 def database_handler(dp):
-    dp.register_message_handler(list_of_tags, commands=["База данных"])
-    dp.register_message_handler(list_of_tags, Text(equals="база данных", ignore_case=True))
+    dp.register_message_handler(list_of_authors, commands=["База данных"])
+    dp.register_message_handler(list_of_authors, Text(equals="база данных", ignore_case=True))
