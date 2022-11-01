@@ -1,6 +1,6 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram.types import InlineKeyboardButton, CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.dispatcher.filters import Text
-from aiogram.utils.exceptions import MessageNotModified, MessageToDeleteNotFound
 from create import dp, bot
 from handlers.sort_by_tags import sort_tags, list_of_authors
 from database.sql_db import sql_edit, sql_delete
@@ -9,18 +9,24 @@ amount = 0
 
 def get_keyboard(i):
     global amount
-    return InlineKeyboardMarkup().row(
+    manage_keyboard = InlineKeyboardBuilder()
+    manage_keyboard.row(
         InlineKeyboardButton(text="Посмотреть", callback_data=f"description_show {i[0]}"),
         InlineKeyboardButton(text="Скрыть", callback_data=f"description_hide {i[0]}"),
         InlineKeyboardButton(text="Удалить", callback_data=f"description_delete {i[0]}")
-    ).row(
+    )
+    manage_keyboard.row(
         InlineKeyboardButton(text="Назад", callback_data=f"tags_back"),
         InlineKeyboardButton(text=f"{amount + 1}/{len(sort_tags.read_tags)}", callback_data=f"tags_count"),
         InlineKeyboardButton(text="Вперед", callback_data=f"tags_next")
-    ).add(InlineKeyboardButton(text="Меню", callback_data=f"menu")
     )
+    manage_keyboard.add(
+        InlineKeyboardButton(text="Меню", callback_data=f"menu")
+    )
+    manage_keyboard.adjust(3)
+    return manage_keyboard.as_markup()
 
-@dp.callback_query_handler(Text(startswith="description_show"))
+@dp.callback_query_handler(Text(text_startswith="description_show"))
 async def show_description(callback: CallbackQuery):
     edit = await sql_edit(callback.data.replace("description_show ", ""))
     for i in edit:
@@ -32,7 +38,7 @@ async def show_description(callback: CallbackQuery):
         ) 
     await callback.answer()
 
-@dp.callback_query_handler(Text(startswith="description_hide"))
+@dp.callback_query_handler(Text(text_startswith="description_hide"))
 async def hide_description(callback: CallbackQuery):
     edit = await sql_edit(callback.data.replace("description_hide ", ""))
     for i in edit:
@@ -85,7 +91,7 @@ async def next_description(callback: CallbackQuery):
         return True
     await callback.answer()      
 
-@dp.callback_query_handler(Text(startswith="description_delete"))
+@dp.callback_query_handler(Text(text_startswith="description_delete"))
 async def delete_description(callback: CallbackQuery):
     await bot.delete_message(callback.from_user.id, callback.message.message_id)
     await sql_delete(callback.data.replace("description_delete ", ""))
@@ -100,11 +106,3 @@ async def back_to_menu(callback: CallbackQuery):
     await bot.delete_message(callback.from_user.id, callback.message.message_id)
     await list_of_authors(callback)
     await callback.answer()
-
-@dp.errors_handler(exception=MessageNotModified)
-async def message_not_modified_handler(update, error):
-    return True
-
-@dp.errors_handler(exception=MessageToDeleteNotFound)
-async def message_not_modified_handler(update, error):
-    return True

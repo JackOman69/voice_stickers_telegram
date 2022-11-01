@@ -24,11 +24,15 @@
 
 - `git clone https://github.com/JackOman69/voice_stickers_telegram -b light-version`
 - `python -m venv venv`
-- `& /Путь до проекта/voice_stickers_telegram/venv/Scripts/Activate.ps1`
+- `venv/Scripts/Activate` Для активации виртуального окружения
 - `pip install -r requirements.txt`
 - Создайте в корневой папке файл .env, куда добавьте строку `TOKEN="ВАШ_ТОКЕН_БОТА"`
 - Измените в файле `handlers/start_chat.py` константу `ADMIN_ID` на ваш ID или ID всех людей, кто будет пользоваться админкой
 - `python main.py`
 
+## Обновления:
+
+- `30.10.2022` | Релиз бота на Aiogram 2.22
+- `01.11.2022` | Переход бота на версию Aiogram 3.0.0b3
 
 <h1 align="center">Обновления в пути!</h1>

@@ -1,7 +1,13 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram import types
 
-button_menu = KeyboardButton("База данных")
-button_load = KeyboardButton("Загрузить")
+button_menu = [
+    [
+        types.KeyboardButton(text="База данных"),
+        types.KeyboardButton(text="Загрузить")
+    ],
+]
 
-kb_menu = ReplyKeyboardMarkup(resize_keyboard=True)
-kb_menu.row(button_menu, button_load)
+kb_menu = types.ReplyKeyboardMarkup(
+    keyboard=button_menu,
+    resize_keyboard=True
+)

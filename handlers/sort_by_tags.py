@@ -1,25 +1,32 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
+from aiogram import Router
+from aiogram.types import InlineKeyboardButton, CallbackQuery, Message
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.dispatcher.filters import Text
 from create import bot, dp
 from handlers import manage_voices
 from database import sql_db
 
+router = Router()
+
 def sort_author_keyboard(authors):
-    authors_inline = []
+    builder_authors = InlineKeyboardBuilder()
     for i in authors:
-        authors_inline.append(InlineKeyboardButton(text=i, callback_data=f"sort_voices_authors {i}"))
-    return InlineKeyboardMarkup(inline_keyboard=[[i] for i in authors_inline])
+        builder_authors.add(InlineKeyboardButton(text=i, callback_data=f"sort_voices_authors {i}"))
+    builder_authors.adjust(1)
+    return builder_authors.as_markup()
 
 def sort_tags_keyboard(sorted_tags):
-    tags_inline = []
+    builder_tags = InlineKeyboardBuilder()
     for i in sorted_tags:
-        tags_inline.append(InlineKeyboardButton(text=i, callback_data=f"sort_voices_tags {i}"))
-    return InlineKeyboardMarkup(inline_keyboard=[[i] for i in tags_inline]).add(InlineKeyboardButton(text="Меню", callback_data=f"menu"))
+        builder_tags.add(InlineKeyboardButton(text=i, callback_data=f"sort_voices_tags {i}"))
+    builder_tags.add(InlineKeyboardButton(text="Меню", callback_data=f"menu"))
+    builder_tags.adjust(1)
+    return builder_tags.as_markup()
 
 def sorted_list(sorting):
     return list(set([i[j] for i in [i[0].split(", ") for i in sorting] for j in range(len(i))]))
 
-@dp.callback_query_handler(Text(startswith="sort_voices_tags"))
+@dp.callback_query_handler(Text(text_startswith="sort_voices_tags"))
 async def sort_tags(callback: CallbackQuery):
     sort_tags.read_tags = await sql_db.sql_sort_by_tags(callback.data.replace("sort_voices_tags ", ""))
     await bot.delete_message(callback.from_user.id, callback.message.message_id)
@@ -31,7 +38,7 @@ async def sort_tags(callback: CallbackQuery):
     )
     await callback.answer()
 
-@dp.callback_query_handler(Text(startswith="sort_voices_authors"))
+@dp.callback_query_handler(Text(text_startswith="sort_voices_authors"))
 async def list_of_tags(callback: CallbackQuery):
     sort_tags_by_authors = await sql_db.sql_sort_by_authors(callback.data.replace("sort_voices_authors ", ""))
     sorted_tags = sorted_list(sort_tags_by_authors)
@@ -47,17 +54,16 @@ async def list_of_tags(callback: CallbackQuery):
     )
     await callback.answer()
 
+@router.message(commands=["База данных"])
+@router.message(Text(text="база данных", text_ignore_case=True))
 async def list_of_authors(message: Message):
     read_authors = await sql_db.sql_read_author()    
     authors = sorted_list(read_authors)
     if not authors:    
         await bot.send_message(message.from_user.id, "База данных пуста!")
+        return
     await bot.send_message(
         message.from_user.id, 
         "Выберите автора голосового, чьи теги вы хотите посмотреть:", 
         reply_markup = sort_author_keyboard(authors)
     )
-
-def database_handler(dp):
-    dp.register_message_handler(list_of_authors, commands=["База данных"])
-    dp.register_message_handler(list_of_authors, Text(equals="база данных", ignore_case=True))

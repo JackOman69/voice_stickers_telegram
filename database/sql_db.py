@@ -9,10 +9,10 @@ def sql_start():
     db.commit()
 
 async def sql_add(state):
-    async with state.proxy() as data:
-        cursor.execute("""SELECT datetime("now","localtime")""")
-        cursor.execute("""INSERT INTO voicestickers(voice, name, description, tags, author, created_date, admin_author_id) VALUES (?, ?, ?, ?, ?, datetime("now","localtime"), ?)""", tuple(data.values()))
-        db.commit()
+    data = await state.get_data()
+    cursor.execute("""SELECT datetime("now","localtime")""")
+    cursor.execute("""INSERT INTO voicestickers(voice, name, description, tags, author, created_date, admin_author_id) VALUES (?, ?, ?, ?, ?, datetime("now","localtime"), ?)""", tuple(data.values()))
+    db.commit()
 
 async def sql_read_author():
     return cursor.execute("SELECT author FROM voicestickers").fetchall()

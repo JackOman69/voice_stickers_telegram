@@ -1,6 +1,12 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram import types
 
-button_cancel = KeyboardButton("Отмена")
+button_cancel = [
+    [
+        types.KeyboardButton(text="Отмена")
+    ]
+]
 
-kb_cancel = ReplyKeyboardMarkup(resize_keyboard=True)
-kb_cancel.add(button_cancel)
+kb_cancel = types.ReplyKeyboardMarkup(
+    keyboard=button_cancel, 
+    resize_keyboard=True
+)

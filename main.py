@@ -1,20 +1,23 @@
 import logging
-from aiogram import executor
-from create import dp
+import asyncio
+from create import dp, bot
 from handlers import add_voices, start_chat, sort_by_tags
 from database.sql_db import sql_start
 
-async def on_startup(_):
-    sql_start()
-    
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
-)
+async def main():
 
-start_chat.answer_handler(dp)
-sort_by_tags.database_handler(dp)
-add_voices.register_voices(dp)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+    )
+
+    sql_start()
+
+    dp.include_router(start_chat.router)
+    dp.include_router(sort_by_tags.router)
+    dp.include_router(add_voices.router)
+
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
+    asyncio.run(main())
