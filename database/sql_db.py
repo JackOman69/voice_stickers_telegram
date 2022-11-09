@@ -14,6 +14,9 @@ async def sql_add(state):
     cursor.execute("""INSERT INTO voicestickers(voice, name, description, tags, author, created_date, admin_author_id) VALUES (?, ?, ?, ?, ?, datetime("now","localtime"), ?)""", tuple(data.values()))
     db.commit()
 
+async def sql_sort_by_name(data):
+    return cursor.execute("SELECT * FROM voicestickers WHERE instr(name, ?) > 0", (data, )).fetchall()
+
 async def sql_read_author():
     return cursor.execute("SELECT author FROM voicestickers").fetchall()
 

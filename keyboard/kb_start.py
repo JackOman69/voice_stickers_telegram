@@ -4,7 +4,7 @@ button_menu = [
     [
         types.KeyboardButton(text="База данных"),
         types.KeyboardButton(text="Загрузить")
-    ],
+    ]
 ]
 
 kb_menu = types.ReplyKeyboardMarkup(

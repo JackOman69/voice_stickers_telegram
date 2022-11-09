@@ -5,5 +5,7 @@ import os
 
 load_dotenv(find_dotenv())
 
+ADMINS = [int(i) for i in os.getenv("ADMIN_ID").split(",")]
+
 bot = Bot(token=os.getenv("TOKEN"))
 dp = Dispatcher(storage=MemoryStorage())

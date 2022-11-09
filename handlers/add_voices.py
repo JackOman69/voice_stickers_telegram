@@ -6,8 +6,8 @@ from aiogram.dispatcher.filters import Text
 from create import bot
 from keyboard import kb_admin, kb_start
 from database.sql_db import sql_add
+from create import ADMINS
 
-ADMIN_ID = [509237723, 458554554, 440280067]
 
 router = Router()
 
@@ -31,14 +31,14 @@ async def cancel_handler(message: Message, state: FSMContext):
 @router.message(commands=["Загрузить"])
 @router.message(Text(text="загрузить", text_ignore_case=True))
 async def add_start(message: Message, state: FSMContext):
-    if message.from_user.id in ADMIN_ID:
+    if message.from_user.id in ADMINS:
         await state.set_state(FSMVoices.voice)
         await message.answer("Здраствуй, админ!\nДля начала пришли голосовое:", reply_markup=kb_admin.kb_cancel)
         await delete_messages(message)
 
 @router.message(FSMVoices.voice)
 async def add_voice(message: Message, state: FSMContext):
-    if message.from_user.id in ADMIN_ID:
+    if message.from_user.id in ADMINS:
         await state.update_data(voice=message.voice.file_id)
         await state.set_state(FSMVoices.name)
         await message.answer("Добавь название голосового:")
@@ -46,7 +46,7 @@ async def add_voice(message: Message, state: FSMContext):
 
 @router.message(FSMVoices.name)
 async def add_name(message: Message, state: FSMContext):
-    if message.from_user.id in ADMIN_ID:
+    if message.from_user.id in ADMINS:
         await state.update_data(name=message.text)
         await state.set_state(FSMVoices.description)
         await message.answer("Добавь описание голосового:")
@@ -54,7 +54,7 @@ async def add_name(message: Message, state: FSMContext):
 
 @router.message(FSMVoices.description)
 async def add_description(message: Message, state: FSMContext):
-    if message.from_user.id in ADMIN_ID:
+    if message.from_user.id in ADMINS:
         await state.update_data(description=message.text)
         await state.set_state(FSMVoices.tags)
         await message.answer("Добавь теги голосового через запятую:")
@@ -62,7 +62,7 @@ async def add_description(message: Message, state: FSMContext):
 
 @router.message(FSMVoices.tags)
 async def add_tags(message: Message, state: FSMContext):
-    if message.from_user.id in ADMIN_ID:
+    if message.from_user.id in ADMINS:
         await state.update_data(tags=message.text.lower())
         await state.set_state(FSMVoices.author)
         await message.answer("Добавь имя автора голосового:")
@@ -70,7 +70,7 @@ async def add_tags(message: Message, state: FSMContext):
 
 @router.message(FSMVoices.author)
 async def add_author_and_id(message: Message, state: FSMContext):
-    if message.from_user.id in ADMIN_ID:
+    if message.from_user.id in ADMINS:
         await state.update_data(author=message.text.lower())
         await state.update_data(admin_author_id=message.from_user.id)
         await message.answer("Далее в базу автоматически вставится ваш ID...") 
