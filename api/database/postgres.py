@@ -3,38 +3,43 @@ from dotenv import load_dotenv, find_dotenv
 import os
 
 load_dotenv(find_dotenv())
+try:
+    connection = psycopg2.connect(
+        host=os.getenv("HOST"),
+        user=os.getenv("USER"),
+        password=os.getenv("PASSWORD"),
+        database=os.getenv("DB_NAME")
+    )
 
-def initialization_db():
-    connection = None
-    try:
-        connection = psycopg2.connect(
-            host=os.getenv("HOST"),
-            user=os.getenv("USER"),
-            password=os.getenv("PASSWORD"),
-            database=os.getenv("DB_NAME")
-        )
-        connection.autocommit = True
-        with connection.cursor() as cursor:
-            cursor.execute("""SELECT version();""")
-            print(f"[INFO] Version: {cursor.fetchone()}" )
+    connection.autocommit = True
+except Exception as ex:
+    print("[INFO] EXCEPTIONS: ", ex)
 
-        with connection.cursor() as cursor:
-            cursor.execute("""CREATE TABLE IF NOT EXISTS voicestickers(
-                            id SERIAL PRIMARY KEY, 
-                            voice TEXT, 
-                            name TEXT, 
-                            description TEXT, 
-                            tags TEXT, 
-                            author TEXT, 
-                            created_date TEXT, 
-                            admin_author_id INTEGER)""")
-    
-            print("[INFO] Successfully!")
+# GET Queries
+def voice_by_id(data):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM voicestickers_db WHERE id = %s", (data, ))
+        by_id = cursor.fetchall()
+        return by_id
 
-    except Exception as ex:
-        print("[INFO] Some exceptions were raised: ", ex)
-    # finally:
-    #     connection.close()
-    #     print("[INFO] Database is closed")
+def voice_by_name(data):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM voicestickers_db WHERE name = %s", (data, ))
+        by_name = cursor.fetchall()
+        return by_name
 
-initialization_db()
+def voice_by_tag(data):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM voicestickers_db WHERE tags = %s", (data, ))
+        by_tag = cursor.fetchall()
+        return by_tag
+
+def voice_by_author(data):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM voicestickers_db WHERE author = %s", (data, ))
+        by_author = cursor.fetchall()
+        return by_author
+
+# POST Queries
+# def create_the_voice():
+#     with connection.cursor() as cursor:

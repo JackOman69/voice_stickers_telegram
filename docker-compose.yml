@@ -9,6 +9,8 @@ services:
       - ./api:/code/api
     ports:
       - 80:80
+    links:
+      - "voicestickers_db:voicestickers_db"
     depends_on:
       - voicestickers_db
 
@@ -17,7 +19,7 @@ services:
     command: python3 main.py
     restart: always
     volumes:
-      - ./bot:/code/bot
+      - ./app:/code/app
     depends_on:
       - api
 
