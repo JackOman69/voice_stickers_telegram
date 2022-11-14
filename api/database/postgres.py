@@ -10,7 +10,7 @@ try:
         password=os.getenv("PASSWORD"),
         database=os.getenv("DB_NAME")
     )
-
+    print("[INFO] Connection was successful!")
     connection.autocommit = True
 except Exception as ex:
     print("[INFO] EXCEPTIONS: ", ex)

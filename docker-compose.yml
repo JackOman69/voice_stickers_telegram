@@ -9,10 +9,8 @@ services:
       - ./api:/code/api
     ports:
       - 80:80
-    links:
-      - "voicestickers_db:voicestickers_db"
     depends_on:
-      - voicestickers_db
+      - database
 
   bot:
     build: ./app
@@ -23,14 +21,13 @@ services:
     depends_on:
       - api
 
-  voicestickers_db:
+  database:
     build: ./postgres_database
     volumes:
       - ./postgres_database:/code/postgres_database
     ports: 
       - 5432:5432
     restart: always
-
     environment:
       - POSTGRES_USER=postgres_voicestickers
       - POSTGRES_PASSWORD=qwerty
