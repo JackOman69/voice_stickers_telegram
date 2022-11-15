@@ -3,6 +3,7 @@ from dotenv import load_dotenv, find_dotenv
 import os
 
 load_dotenv(find_dotenv())
+
 try:
     connection = psycopg2.connect(
         host=os.getenv("HOST"),
@@ -15,31 +16,60 @@ try:
 except Exception as ex:
     print("[INFO] EXCEPTIONS: ", ex)
 
-# GET Queries
-def voice_by_id(data):
+# Check functions
+def id_created_voice():
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM voicestickers_db WHERE id = %s", (data, ))
+        cursor.execute("SELECT id FROM voicestickers ORDER BY id DESC LIMIT 1")
+        return cursor.fetchone()[0]
+
+def check_deleted_voice(data):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT id FROM voicestickers WHERE id = %s", (data, ))
+        try:
+            cursor.fetchone()[0]
+        except:
+            return True
+# GET Queries
+def get_all():
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM voicestickers")
+        by_all = cursor.fetchall()
+        return by_all
+
+def voice_by_id(id):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM voicestickers WHERE id = %s", (id, ))
         by_id = cursor.fetchall()
         return by_id
 
-def voice_by_name(data):
+def voice_by_name(name):
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM voicestickers_db WHERE name = %s", (data, ))
+        cursor.execute("SELECT * FROM voicestickers WHERE name = %s", (name, ))
         by_name = cursor.fetchall()
         return by_name
 
-def voice_by_tag(data):
+def voice_by_tag(tags):
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM voicestickers_db WHERE tags = %s", (data, ))
+        cursor.execute("SELECT * FROM voicestickers WHERE %s = ANY (tags)", (tags, ))
         by_tag = cursor.fetchall()
         return by_tag
 
-def voice_by_author(data):
+def voice_by_author(author):
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM voicestickers_db WHERE author = %s", (data, ))
+        cursor.execute("SELECT * FROM voicestickers WHERE author = %s", (author, ))
         by_author = cursor.fetchall()
         return by_author
 
 # POST Queries
-# def create_the_voice():
-#     with connection.cursor() as cursor:
+def create_the_voice(voice, name, description, tags, author, admin_author_id):
+    with connection.cursor() as cursor:
+        cursor.execute("INSERT INTO voicestickers(voice, name, description, tags, author, created_date, admin_author_id) VALUES (%s, %s, %s, %s, %s, LOCALTIMESTAMP(0), %s)", (voice, name, description, tags, author, admin_author_id))
+
+def delete_the_voice(id):
+    with connection.cursor() as cursor:
+        cursor.execute("DELETE FROM voicestickers WHERE id = %s", (id, ))
+
+# PUT Queries
+def edit_the_voice(name, description, tags, author, id):
+    with connection.cursor() as cursor:
+        cursor.execute("UPDATE voicestickers SET name = %s, description = %s, tags = %s, author = %s WHERE id = %s", (name, description, tags, author, id))
