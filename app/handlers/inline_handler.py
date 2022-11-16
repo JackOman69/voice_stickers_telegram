@@ -9,7 +9,7 @@ async def inline_handler_search(inline: InlineQuery):
     text = inline.query
     inline_list_voices = []
     async with httpx.AsyncClient() as client:
-        response = await client.get("http://api/bot/names/?name=" + text)
+        response = await client.get("http://api/bot/names/?name=" + text.capitalize())
         voices_parsed = response.json()
     result_id = 0
     for i in voices_parsed:
