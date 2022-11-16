@@ -3,7 +3,6 @@ import asyncio
 from create import dp, bot
 from handlers import add_voices, start_chat, sort_by_tags, inline_handler, manage_voices
 from errors import not_modified
-# from database.sql_db import sql_start
 
 async def main():
 
@@ -11,7 +10,6 @@ async def main():
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
     )
-    # sql_start()
 
 
     dp.include_router(not_modified.router)

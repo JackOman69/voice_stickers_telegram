@@ -44,7 +44,7 @@ def voice_by_id(id):
 
 def voice_by_name(name):
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM voicestickers WHERE name = %s", (name, ))
+        cursor.execute("SELECT * FROM voicestickers WHERE POSITION(%s in name) > 0", (name, ))
         by_name = cursor.fetchall()
         return by_name
 
@@ -54,16 +54,28 @@ def voice_by_tag(tags):
         by_tag = cursor.fetchall()
         return by_tag
 
+def tags_sorted_by_authors(author):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT tags FROM voicestickers WHERE author = %s", (author, ))
+        by_author = cursor.fetchall()
+        return by_author
+
 def voice_by_author(author):
     with connection.cursor() as cursor:
         cursor.execute("SELECT * FROM voicestickers WHERE author = %s", (author, ))
         by_author = cursor.fetchall()
         return by_author
 
+def all_voices_by_author():
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT author FROM voicestickers")
+        by_author = cursor.fetchall()
+        return by_author
+
 # POST Queries
 def create_the_voice(voice, name, description, tags, author, admin_author_id):
     with connection.cursor() as cursor:
-        cursor.execute("INSERT INTO voicestickers(voice, name, description, tags, author, created_date, admin_author_id) VALUES (%s, %s, %s, %s, %s, LOCALTIMESTAMP(0), %s)", (voice, name, description, tags, author, admin_author_id))
+        cursor.execute("INSERT INTO voicestickers(voice, name, description, tags, author, created_date, admin_author_id) VALUES (%s, %s, %s, %s, %s, LOCALTIMESTAMP(0), %s)", (voice, name, description, tags, author, admin_author_id, ))
 
 def delete_the_voice(id):
     with connection.cursor() as cursor:
@@ -72,4 +84,4 @@ def delete_the_voice(id):
 # PUT Queries
 def edit_the_voice(name, description, tags, author, id):
     with connection.cursor() as cursor:
-        cursor.execute("UPDATE voicestickers SET name = %s, description = %s, tags = %s, author = %s WHERE id = %s", (name, description, tags, author, id))
+        cursor.execute("UPDATE voicestickers SET name = %s, description = %s, tags = %s, author = %s WHERE id = %s", (name, description, tags, author, id, ))

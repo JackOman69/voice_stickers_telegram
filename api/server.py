@@ -1,8 +1,15 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from database.postgres import check_deleted_voice, id_created_voice, get_all, voice_by_id, voice_by_name, voice_by_tag, voice_by_author, create_the_voice, delete_the_voice, edit_the_voice
+from database.postgres import check_deleted_voice, id_created_voice, get_all, voice_by_id, voice_by_name, voice_by_tag, tags_sorted_by_authors, voice_by_author, all_voices_by_author, create_the_voice, delete_the_voice, edit_the_voice
 
-app = FastAPI()
+app = FastAPI(
+    title="VoiceStickersAPI",
+    description="VoiceStickers Telegram API for creating and manage your own voices 🚀",
+    contact={
+        "name": "JackOMan69",
+        "url": "https://github.com/JackOMan69"
+    }
+)
 
 class Create(BaseModel):
     voice: str
@@ -18,7 +25,7 @@ class Edit(BaseModel):
     tags: list
     author: str
 
-BASE_URL = "/api/bot/"
+BASE_URL = "/bot/"
 
 @app.get(BASE_URL + "all")
 async def get_all_bd():
@@ -53,11 +60,11 @@ async def get_voice_by_id(id: int):
         }
     return sorted_by_id
 
-@app.get(BASE_URL + "name/")
+@app.get(BASE_URL + "names/")
 async def get_voice_by_name(name: str):
-    sorted_by_name = {}
+    sorted_by_name = []
     for i in voice_by_name(name):
-        sorted_by_name = {
+        single_by_name = {
             "id": i[0],
             "voice": i[1],
             "name": i[2],
@@ -67,13 +74,14 @@ async def get_voice_by_name(name: str):
             "created_date": i[6],
             "admin_author_id": i[7]
         }
+        sorted_by_name.append(single_by_name)
     return sorted_by_name
 
-@app.get(BASE_URL + "tag/")
+@app.get(BASE_URL + "tags/")
 async def get_voice_by_tag(tag: str):
-    sorted_by_tag = {}
+    sorted_by_tag = []
     for i in voice_by_tag(tag):
-        sorted_by_tag = {
+        single_by_tag = {
             "id": i[0],
             "voice": i[1],
             "name": i[2],
@@ -83,13 +91,24 @@ async def get_voice_by_tag(tag: str):
             "created_date": i[6],
             "admin_author_id": i[7]
         }
+        sorted_by_tag.append(single_by_tag)
     return sorted_by_tag
 
-@app.get(BASE_URL + "author/")
+@app.get(BASE_URL + "tags/sorted")
+async def sorted_tags_by_author(author: str):
+    tags_by_authors = []
+    for i in tags_sorted_by_authors(author):
+        single_tag = {
+            "tags": i[0]
+        }
+        tags_by_authors.append(single_tag)
+    return tags_by_authors
+
+@app.get(BASE_URL + "authors/")
 async def get_voice_by_author(author: str):
-    sorted_by_author = {}
+    sorted_by_author = []
     for i in voice_by_author(author):
-        sorted_by_author = {
+        single_by_author = {
             "id": i[0],
             "voice": i[1],
             "name": i[2],
@@ -99,16 +118,27 @@ async def get_voice_by_author(author: str):
             "created_date": i[6],
             "admin_author_id": i[7]
         }
+        sorted_by_author.append(single_by_author)
     return sorted_by_author
+
+@app.get(BASE_URL + "authors/all")
+async def get_voice_by_author():
+    all_authors = []
+    for i in all_voices_by_author():
+        single_author = {
+            "author": i[0]
+        }
+        all_authors.append(single_author)
+    return all_authors
 
 @app.post(BASE_URL + "create/")
 async def create_new_voice(bot: Create):
     create_the_voice(bot.voice, bot.name, bot.description, bot.tags, bot.author, bot.admin_author_id)
-    result = {
+    create_result = {
         "result": "OK",
         "id": id_created_voice()
     }
-    return result
+    return create_result
 
 @app.delete(BASE_URL + "delete/")
 async def delete_existing_voice(id: int):

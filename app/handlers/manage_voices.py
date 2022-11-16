@@ -4,23 +4,22 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.dispatcher.filters import Text
 from create import bot
 from handlers.sort_by_tags import sort_tags, list_of_authors
-from database.sql_db import sql_edit, sql_delete
+import httpx
 
 router = Router()
-
 amount = 0
 
-def get_keyboard(i):
-    global amount
+def get_keyboard(id):
+    global amount, len_voices
     manage_keyboard = InlineKeyboardBuilder()
     manage_keyboard.row(
-        InlineKeyboardButton(text="Посмотреть", callback_data=f"description_show {i[0]}"),
-        InlineKeyboardButton(text="Удалить", callback_data=f"description_delete {i[0]}"),
-        InlineKeyboardButton(text="Скрыть", callback_data=f"description_hide {i[0]}")
+        InlineKeyboardButton(text="Посмотреть", callback_data=f"description_show {id}"),
+        InlineKeyboardButton(text="Удалить", callback_data=f"description_delete {id}"),
+        InlineKeyboardButton(text="Скрыть", callback_data=f"description_hide {id}")
     )
     manage_keyboard.row(
         InlineKeyboardButton(text="⬅️", callback_data=f"tags_back"),
-        InlineKeyboardButton(text=f"{amount + 1}/{len(sort_tags.read_tags)}", callback_data=f"tags_count"),
+        InlineKeyboardButton(text=f"{amount + 1}/{len(sort_tags.voices_by_tags) }", callback_data=f"tags_count"),
         InlineKeyboardButton(text="➡️", callback_data=f"tags_next")
     )
     manage_keyboard.add(
@@ -31,32 +30,35 @@ def get_keyboard(i):
 
 @router.callback_query(Text(text_startswith="description_show"))
 async def show_description(callback: CallbackQuery):
-    edit = await sql_edit(callback.data.replace("description_show ", ""))
-    for i in edit:
-        await bot.edit_message_caption( 
-            callback.from_user.id, 
-            callback.message.message_id, 
-            caption = f"ID в базе данных: {i[0]}\nНазвание голосового: {i[2]}\nОписание голосового: {i[3]}\nТеги голосового: {i[4]}\nАвтор голосового: {i[5]}\nID Автора: {i[7]}",
-            reply_markup=get_keyboard(i)
-        ) 
+    async with httpx.AsyncClient() as client:
+        response = await client.get("http://api/bot/id/?id=" + callback.data.replace("description_show ", ""))
+        show_data_voice = response.json() 
+    await bot.edit_message_caption( 
+        callback.from_user.id, 
+        callback.message.message_id, 
+        caption = "ID в базе данных: " + str(show_data_voice["id"]) + "\n" + "Название голосового: " + show_data_voice["name"] + "\n" + "Описание голосового: " + show_data_voice["description"] + "\n" + "Теги голосового: " + ", ".join(show_data_voice["tags"]) + "\n" + "Автор голосового: " + show_data_voice["author"] + "\n" + "ID Автора: " + str(show_data_voice["admin_author_id"]),
+        reply_markup=get_keyboard(show_data_voice["id"])
+    ) 
     await callback.answer()
 
 @router.callback_query(Text(text_startswith="description_hide"))
 async def hide_description(callback: CallbackQuery):
-    edit = await sql_edit(callback.data.replace("description_hide ", ""))
-    for i in edit:
-        await bot.edit_message_caption(
-            callback.from_user.id, 
-            callback.message.message_id,
-            caption = f"Описание голосового: {i[3]}",
-            reply_markup=get_keyboard(i)
-        )
+    async with httpx.AsyncClient() as client:
+        response = await client.get("http://api/bot/id/?id=" + callback.data.replace("description_hide ", ""))
+        hide_data_voice = response.json() 
+    await bot.edit_message_caption(
+        callback.from_user.id, 
+        callback.message.message_id,
+        caption = "Описание голосового: " + hide_data_voice["description"],
+        reply_markup=get_keyboard(hide_data_voice["id"])
+    )
     await callback.answer()
 
 @router.callback_query(Text(text_startswith="description_delete"))
 async def delete_description(callback: CallbackQuery):
     await bot.delete_message(callback.from_user.id, callback.message.message_id)
-    await sql_delete(callback.data.replace("description_delete ", ""))
+    async with httpx.AsyncClient() as client:
+        await client.delete("http://api/bot/delete/?id=" + callback.data.replace("description_delete ", ""))
     await bot.send_message(callback.from_user.id, "Голосовое успешно удалено!\nВозвращаю вас в меню...")
     await list_of_authors(callback)
     await callback.answer()
@@ -72,9 +74,9 @@ async def next_description(callback: CallbackQuery):
         else:
             await bot.send_voice(
                 callback.from_user.id, 
-                sort_tags.read_tags[amount][1],
-                f"Описание голосового: {sort_tags.read_tags[amount][3]}\n", 
-                reply_markup=get_keyboard(sort_tags.read_tags[amount])
+                sort_tags.voices_by_tags[amount]["voice"],
+                "Описание голосового: " + sort_tags.voices_by_tags[amount]["description"] + "\n", 
+                reply_markup=get_keyboard(sort_tags.voices_by_tags[amount]["id"])
             )
             await bot.delete_message(callback.from_user.id, callback.message.message_id)
     except IndexError:
@@ -92,9 +94,9 @@ async def next_description(callback: CallbackQuery):
     try:
         await bot.send_voice(
             callback.from_user.id, 
-            sort_tags.read_tags[amount][1],
-            f"Описание голосового: {sort_tags.read_tags[amount][3]}\n",
-            reply_markup=get_keyboard(sort_tags.read_tags[amount])
+            sort_tags.voices_by_tags[amount]["voice"],
+            "Описание голосового: " + sort_tags.voices_by_tags[amount]["description"] + "\n",
+            reply_markup=get_keyboard(sort_tags.voices_by_tags[amount]["id"])
         )
         await bot.delete_message(callback.from_user.id, callback.message.message_id)
     except IndexError:

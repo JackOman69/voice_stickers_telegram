@@ -4,15 +4,16 @@ from aiogram.dispatcher.fsm.context import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from create import bot
-from keyboard import kb_admin, kb_start
-from database.sql_db import sql_add
 from create import ADMINS
+from keyboard import kb_cancel, kb_start
+import httpx
+import json
 
 
 router = Router()
 
 class FSMVoices(StatesGroup):
-    voice, name, description, tags, author = State(), State(), State(), State(), State()
+    voice, name, description, tags, author, admin_author_id = State(), State(), State(), State(), State(), State()
 
 async def delete_messages(message):
     await bot.delete_message(message.from_user.id, message.message_id)
@@ -33,7 +34,7 @@ async def cancel_handler(message: Message, state: FSMContext):
 async def add_start(message: Message, state: FSMContext):
     if message.from_user.id in ADMINS:
         await state.set_state(FSMVoices.voice)
-        await message.answer("Здраствуй, админ!\nДля начала пришли голосовое:", reply_markup=kb_admin.kb_cancel)
+        await message.answer("Здраствуй, админ!\nДля начала пришли голосовое:", reply_markup=kb_cancel.kb_cancel)
         await delete_messages(message)
 
 @router.message(FSMVoices.voice)
@@ -63,7 +64,7 @@ async def add_description(message: Message, state: FSMContext):
 @router.message(FSMVoices.tags)
 async def add_tags(message: Message, state: FSMContext):
     if message.from_user.id in ADMINS:
-        await state.update_data(tags=message.text.lower())
+        await state.update_data(tags=message.text.lower().split(", "))
         await state.set_state(FSMVoices.author)
         await message.answer("Добавь имя автора голосового:")
         await delete_messages(message)        
@@ -73,8 +74,12 @@ async def add_author_and_id(message: Message, state: FSMContext):
     if message.from_user.id in ADMINS:
         await state.update_data(author=message.text.lower())
         await state.update_data(admin_author_id=message.from_user.id)
-        await message.answer("Далее в базу автоматически вставится ваш ID...") 
-        await sql_add(state)
-        await message.answer("Готово!", reply_markup=kb_start.kb_menu)
         await delete_messages(message)
+        await message.answer("Далее в базу автоматически вставится ваш ID...")
+        dict_data = await state.get_data()
+        json_data = json.dumps(dict_data, ensure_ascii=False)
+        print(json_data)
+        async with httpx.AsyncClient() as client:
+            await client.post("http://api/bot/create/", data=json_data)
+        await message.answer("Готово!", reply_markup=kb_start.kb_menu)
         await state.clear()
