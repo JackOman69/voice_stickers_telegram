@@ -3,7 +3,7 @@ from aiogram.types import InlineKeyboardButton, CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.dispatcher.filters import Text
 from create import bot
-from handlers import manage_voices
+from handlers.manage_voices import get_keyboard
 import httpx
 from create import ADMINS
 
@@ -69,6 +69,6 @@ async def sort_tags(callback: CallbackQuery):
         callback.from_user.id, 
         sort_tags.voices_by_tags[0]["voice"],
         "Описание голосового: " + sort_tags.voices_by_tags[0]["description"] + "\n",
-        reply_markup=manage_voices.get_keyboard(sort_tags.voices_by_tags[0]["id"])
+        reply_markup=get_keyboard(sort_tags.voices_by_tags[0]["id"])
     )
     await callback.answer()

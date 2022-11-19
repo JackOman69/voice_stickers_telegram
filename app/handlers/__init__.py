@@ -1,1 +1,1 @@
-from handlers import add_voices, start_chat, manage_voices, sort_by_tags
+from handlers import add_voices, start_chat, manage_voices, sort_by_tags, inline_handler, edit_voices
