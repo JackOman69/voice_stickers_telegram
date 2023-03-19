@@ -11,6 +11,7 @@ app = FastAPI(
     }
 )
 
+
 class Create(BaseModel):
     voice: str
     name: str
@@ -19,13 +20,16 @@ class Create(BaseModel):
     author: str
     admin_author_id: int
 
+
 class Edit(BaseModel):
     name: str
     description: str
     tags: list
     author: str
 
+
 BASE_URL = "/bot/"
+
 
 @app.get(BASE_URL + "all")
 async def get_all_bd():
@@ -44,6 +48,7 @@ async def get_all_bd():
         all_voices.append(single_voice)
     return all_voices
 
+
 @app.get(BASE_URL + "id/")
 async def get_voice_by_id(id: int):
     sorted_by_id = {}
@@ -60,22 +65,59 @@ async def get_voice_by_id(id: int):
         }
     return sorted_by_id
 
-@app.get(BASE_URL + "names/")
-async def get_voice_by_name(name: str):
-    sorted_by_name = []
-    for i in voice_by_name(name):
-        single_by_name = {
-            "id": i[0],
-            "voice": i[1],
-            "name": i[2],
-            "description": i[3],
-            "tags": i[4],
-            "author": i[5],
-            "created_date": i[6],
-            "admin_author_id": i[7]
-        }
-        sorted_by_name.append(single_by_name)
-    return sorted_by_name
+
+# Получение голосовых по именам, тегам, авторам
+@app.get(BASE_URL + "get_voices/")
+async def get_voices(text: str):
+    result = []
+
+    text = text.lower().strip()
+
+    voices = get_all()
+    for voice in voices:
+        isFind = False
+
+        name = voice[2].lower()
+        if name.find(text) != -1:
+            isFind = True
+
+        if isFind == False:
+            author = voice[5].lower()
+            if author.find(text) != -1:
+                isFind = True
+
+        if isFind == False:
+            tags = voice[4]
+            if (name in tags):
+                isFind = True
+
+        if isFind:
+            result.append({
+                "id": voice[0],
+                "voice": voice[1],
+                "name": voice[2],
+                "description": voice[3],
+                "tags": voice[4],
+                "author": voice[5],
+                "created_date": voice[6],
+                "admin_author_id": voice[7]
+            })
+    
+    if len(result) == 0 and len(text) == 0:
+        for voice in voices:
+            result.append({
+                "id": voice[0],
+                "voice": voice[1],
+                "name": voice[2],
+                "description": voice[3],
+                "tags": voice[4],
+                "author": voice[5],
+                "created_date": voice[6],
+                "admin_author_id": voice[7]
+            })
+
+    return result
+
 
 @app.get(BASE_URL + "tags/")
 async def get_voice_by_tag(tag: str):
@@ -94,6 +136,7 @@ async def get_voice_by_tag(tag: str):
         sorted_by_tag.append(single_by_tag)
     return sorted_by_tag
 
+
 @app.get(BASE_URL + "tags/sorted")
 async def sorted_tags_by_author(author: str):
     tags_by_authors = []
@@ -103,6 +146,7 @@ async def sorted_tags_by_author(author: str):
         }
         tags_by_authors.append(single_tag)
     return tags_by_authors
+
 
 @app.get(BASE_URL + "authors/")
 async def get_voice_by_author(author: str):
@@ -121,6 +165,7 @@ async def get_voice_by_author(author: str):
         sorted_by_author.append(single_by_author)
     return sorted_by_author
 
+
 @app.get(BASE_URL + "authors/all")
 async def get_voice_by_author():
     all_authors = []
@@ -131,14 +176,17 @@ async def get_voice_by_author():
         all_authors.append(single_author)
     return all_authors
 
+
 @app.post(BASE_URL + "create/")
 async def create_new_voice(bot: Create):
-    create_the_voice(bot.voice, bot.name, bot.description, bot.tags, bot.author, bot.admin_author_id)
+    create_the_voice(bot.voice, bot.name, bot.description,
+                     bot.tags, bot.author, bot.admin_author_id)
     create_result = {
         "result": "OK",
         "id": id_created_voice()
     }
     return create_result
+
 
 @app.delete(BASE_URL + "delete/")
 async def delete_existing_voice(id: int):
@@ -147,6 +195,7 @@ async def delete_existing_voice(id: int):
     else:
         delete_the_voice(id)
         return {"status": "OK"}
+
 
 @app.put(BASE_URL + "edit/")
 async def edit_existing_voice(bot: Edit, id: int):

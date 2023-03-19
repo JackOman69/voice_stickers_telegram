@@ -6,6 +6,7 @@ from create import ADMINS
 
 router = Router()
 
+
 @router.message(commands=["start", "help", "Помощь"])
 @router.message(Text(text="помощь", text_ignore_case=True))
 async def command_start(message: Message):
