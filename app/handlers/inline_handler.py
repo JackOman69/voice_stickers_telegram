@@ -1,35 +1,34 @@
 from aiogram import Router
 from aiogram.types import InlineQuery, InlineQueryResultCachedVoice
+
 import httpx
 import uuid
+import os
 
 router = Router()
+
 
 @router.inline_query()
 async def inline_handler_search(inline: InlineQuery):
     text = inline.query
-    inline_list_voices = []
+
     async with httpx.AsyncClient() as client:
-        response = await client.get("http://api/bot/names/?name=" + text.capitalize())
-        voices_parsed = response.json()
-    if not text:
-        for i in range(45):
-            result_id = str(uuid.uuid4())
-            inline_list_voices.append(InlineQueryResultCachedVoice(
-                type = "voice",
-                id = result_id,
-                voice_file_id = voices_parsed[i]["voice"],
-                title = voices_parsed[i]["name"]
-            ))
+        response = await client.get(os.getenv("HOST") + "/bot/get_voices/?text=" + text)
+        voices = response.json()
+
+    voices = list(reversed(voices))
+    if len(voices) > 45:
+        range_num = 45
     else:
-        inline_list_voices = []
-        for i in voices_parsed:
-            result_id = str(uuid.uuid4())
-            inline_list_voices.append(InlineQueryResultCachedVoice(
-                type = "voice",
-                id = result_id,
-                voice_file_id = i["voice"],
-                title = i["name"]
-            ))
-    await inline.answer(inline_list_voices, cache_time = 1, is_personal=True)
-    
+        range_num = len(voices)
+
+    result_voices = []
+    for i in range(range_num):
+        result_voices.append(InlineQueryResultCachedVoice(
+            type="voice",
+            id=str(uuid.uuid4()),
+            voice_file_id=voices[i]["voice"],
+            title=voices[i]["name"]
+        ))
+
+    await inline.answer(result_voices, cache_time=1, is_personal=True)
